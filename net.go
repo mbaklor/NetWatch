@@ -1,4 +1,4 @@
-package net
+package netwatch
 
 import (
 	"syscall"
@@ -50,12 +50,15 @@ func notifyUnicastIpAddressChange(family AddressFamily, callback uintptr, caller
 	return nil
 }
 
+// NetMonitor represents a registered monitor to the network interfaces on windows machines
+// once registered, any change to a network name or ip address is sent to the MonitorChan
 type NetMonitor struct {
 	MonitorChan     chan struct{}
 	interfaceHandle *windows.Handle
 	addrHandle      *windows.Handle
 }
 
+// Creates a new NetMonitor and initiates it's channel
 func NewNetMonitor() *NetMonitor {
 	ch := make(chan struct{})
 	interfaceChange := windows.Handle(0)
@@ -63,6 +66,7 @@ func NewNetMonitor() *NetMonitor {
 	return &NetMonitor{ch, &interfaceChange, &addrChange}
 }
 
+// Registers the network monitor to the windows notifier
 func (nm *NetMonitor) Register() error {
 	err := notifyIPInterfaceChange(windows.AF_INET, windows.NewCallback(nm.callback), 0, false, nm.interfaceHandle)
 	if err != nil {
@@ -75,6 +79,7 @@ func (nm *NetMonitor) Register() error {
 	return nil
 }
 
+// Removes the windows notifier to the network
 func (nm *NetMonitor) Unregister() error {
 	err := cancelMibChangeNotify2(*nm.interfaceHandle)
 	if err != nil {
