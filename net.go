@@ -66,6 +66,8 @@ func NewNetMonitor() *NetMonitor {
 }
 
 // Registers the network monitor to the windows notifier
+//
+// If returns error it's possible the error came from either notification hooks registering, so it is up to the caller to clean up by calling Unregister() as well
 func (nm *NetMonitor) Register(initialNotification bool) error {
 	err1 := notifyIPInterfaceChange(windows.AF_INET, windows.NewCallback(nm.callbackIpInterfaceChange), CONTEXT_NOTIFY_IP_INTERFACE_CHANGE, initialNotification, nm.interfaceHandle)
 	err2 := notifyUnicastIpAddressChange(windows.AF_INET, windows.NewCallback(nm.callbackUnicastAddressChange), CONTEXT_NOTIFY_UNICAST_IP_ADDRESS_CHANGE, initialNotification, nm.addrHandle)
