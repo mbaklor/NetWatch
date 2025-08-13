@@ -1,6 +1,7 @@
 package netwatch
 
 import (
+	"errors"
 	"syscall"
 	"unsafe"
 
@@ -68,28 +69,21 @@ func NewNetMonitor() *NetMonitor {
 
 // Registers the network monitor to the windows notifier
 func (nm *NetMonitor) Register() error {
-	err := notifyIPInterfaceChange(windows.AF_INET, windows.NewCallback(nm.callback), 0, false, nm.interfaceHandle)
-	if err != nil {
-		return err
-	}
-	err = notifyUnicastIpAddressChange(windows.AF_INET, windows.NewCallback(nm.callback), 0, false, nm.addrHandle)
-	if err != nil {
-		return err
-	}
-	return nil
+	err1 := notifyIPInterfaceChange(windows.AF_INET, windows.NewCallback(nm.callback), 0, false, nm.interfaceHandle)
+	err2 := notifyUnicastIpAddressChange(windows.AF_INET, windows.NewCallback(nm.callback), 0, false, nm.addrHandle)
+	return errors.Join(err1, err2)
 }
 
 // Removes the windows notifier to the network
 func (nm *NetMonitor) Unregister() error {
-	err := cancelMibChangeNotify2(*nm.interfaceHandle)
-	if err != nil {
-		return err
+	var err1, err2 error
+	if nm.interfaceHandle != nil {
+		err1 = cancelMibChangeNotify2(*nm.interfaceHandle)
 	}
-	err = cancelMibChangeNotify2(*nm.addrHandle)
-	if err != nil {
-		return err
+	if nm.addrHandle != nil {
+		err2 = cancelMibChangeNotify2(*nm.addrHandle)
 	}
-	return err
+	return errors.Join(err1, err2)
 }
 
 func (nm *NetMonitor) callback(callerContext, row, notificationType uintptr) uintptr {
