@@ -97,19 +97,41 @@ func sockaddrToIP(rsa windows.RawSockaddrInet6) net.IP {
 }
 
 func (nm *NetMonitor) callbackIpInterfaceChange(callerContext CallerContext, row *windows.MibIpInterfaceRow, notificationType MibNotificationType) uintptr {
+	if notificationType == MIB_INITIAL_NOTIFICATION {
+		go func() {
+			nm.MonitorNotificationChan <- MonitorNotification{
+				InterfaceIndex:   0,
+				NotificationType: notificationType,
+				CallerContext:    callerContext,
+				InterfaceAddress: nil,
+			}
+		}()
+		return 0
+	}
 	nm.MonitorNotificationChan <- MonitorNotification{
 		InterfaceIndex:   int(row.InterfaceIndex),
-		NotificationType: (notificationType),
-		CallerContext:    (callerContext),
+		NotificationType: notificationType,
+		CallerContext:    callerContext,
 		InterfaceAddress: nil,
 	}
 	return 0
 }
 func (nm *NetMonitor) callbackUnicastAddressChange(callerContext CallerContext, row *windows.MibUnicastIpAddressRow, notificationType MibNotificationType) uintptr {
+	if notificationType == MIB_INITIAL_NOTIFICATION {
+		go func() {
+			nm.MonitorNotificationChan <- MonitorNotification{
+				InterfaceIndex:   0,
+				NotificationType: notificationType,
+				CallerContext:    callerContext,
+				InterfaceAddress: nil,
+			}
+		}()
+		return 0
+	}
 	nm.MonitorNotificationChan <- MonitorNotification{
 		InterfaceIndex:   int(row.InterfaceIndex),
-		NotificationType: (notificationType),
-		CallerContext:    (callerContext),
+		NotificationType: notificationType,
+		CallerContext:    callerContext,
 		InterfaceAddress: sockaddrToIP(row.Address),
 	}
 	return 0
